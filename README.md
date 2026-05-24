@@ -102,7 +102,7 @@ Os arquivos devem estar no diretório `data/`:
 | `data/b_q.bin`    | 256 bytes    | Bias em Q4.12 (int16)           |
 | `data/beta_q.bin` | 2.560 bytes  | Pesos beta em Q4.12 (int16)     |
 
-Caso queira inserir novas imagens para o teste com 100 imagens, os arquivos de imagem devem ser nomeados `data/0.bin` até `data/99.bin`. Os arquivos de imagem usados nos testes de predição para definir a acurácia já estão no diretório `data/`, 10 imagens para cada digito de 0 à 9. 
+Em caso de teste com 100 imagens, os arquivos de imagem devem ser nomeados `data/0.bin` até `data/99.bin`. Os arquivos de imagem usados nos testes de predição para definir a acurácia da inferencia já estão no diretório `data/`, sendo 10 imagens para cada digito de 0 à 9. 
 
 <div align="center">
 <h1>
@@ -187,7 +187,7 @@ Recebe em R0 o caminho do arquivo, em R1 o endereço do buffer de destino, e em 
 
 ### enviar_instrucao e enviar_instrucao_sem_done
 
-`enviar_instrucao` recebe em R0 a instrução de 32 bits, escreve no `data_in` e ativa o `enable`. A partir daí, entra em loop de polling no `data_out` testando o bit 4 (DONE) com a instrução `TST`. Quando DONE=1, desativa o enable e retorna. `enviar_instrucao_sem_done` faz apenas a escrita e o pulso de enable, sem entrar no polling. É usada exclusivamente para o opcode 1 (STORE_WEIGHTS_ADDR), que não gera DONE.
+`enviar_instrucao` recebe em R0 a instrução de 32 bits, escreve no `data_in` e ativa o `enable`. A partir daí, entra em loop de polling no `data_out` testando o bit 4 (DONE) com a instrução `TST`. Quando `DONE = 1`, desativa o enable e retorna. `enviar_instrucao_sem_done` faz apenas a escrita e o pulso de enable, sem entrar no polling. É usada exclusivamente para o opcode 1 (STORE_WEIGHTS_ADDR), que não gera DONE.
 
 ### enviar_bias, enviar_beta, enviar_img
 
@@ -208,11 +208,11 @@ Funciona de forma similar as outras rotinas de envio de dados, mas o envio dos p
 
 ### iniciar_inferencia
 
-Antes de disparar a inferência, aplica um pulso de `clr_operation` (bit 1 do `pio_signals`) para garantir que o flag DONE esteja em 0. Isso evita que o polling seguinte saia imediatamente ao encontrar um DONE stale de uma operação anterior. Em seguida, envia a instrução START (valor 5), ativa o enable, e aguarda em polling até DONE=1. Após a conclusão, lê `data_out`, desativa o enable, e aplica `AND R0, R0, #15` para isolar os 4 bits do dígito predito, que é retornado em R0 ao C.
+Antes de disparar a inferência, aplica um pulso de `clr_operation` (bit 1 do `pio_signals`) para garantir que o flag DONE esteja em 0. Isso evita que o polling seguinte saia imediatamente ao encontrar um DONE stale de uma operação anterior. Em seguida, envia a instrução START (opcode 5), ativa o enable, e aguarda em polling até `DONE = 1`. Após a conclusão, lê `data_out`, desativa o enable, e aplica `AND R0, R0, #15` para isolar os 4 bits do dígito predito, que é retornado em R0 ao C para ser exibido no terminal e comparado com o valor esperado (Em caso de teste).
 
 ### reset_coprocessador
 
-Escreve o valor `4` no `pio_signals` (bit 2 = rst = 1), aguarda um delay de 0x5000 iterações com `SUBS/BNE` para garantir que o pulso dure ciclos suficientes para a FPGA registrar, e então escreve `0` para liberar o reset.
+Escreve o valor `4` no `pio_signals` (bit 2, `rst = 1`), aguarda um delay de 0x5000 iterações com `SUBS/BNE` para garantir que o pulso dure ciclos suficientes para a FPGA registrar, e então escreve `0` para liberar o reset.
 
 ### Header driver.h
 
@@ -220,9 +220,7 @@ O `driver.h` é o contrato entre o C e o Assembly. Ele define as constantes do h
 
 ### Aplicação em C — main.c
 
-O `main.c` é o orquestrador do sistema. Ele verifica se os arquivos existem no disco, chama `mapear_fpga` e `reset_coprocessador`, envia os parâmetros fixos da rede (bias, beta e pesos) uma única vez antes do loop, e então itera sobre as 100 imagens: para cada uma, envia a imagem, dispara a inferência, registra o resultado e aplica um reset. Ao final, exibe a acurácia total.
-
-Os parâmetros da rede são enviados fora do loop porque não mudam entre imagens — reenviá-los a cada iteração desperdiçaria tempo enviando 200KB de pesos 100 vezes.
+O `main.c` é o orquestrador do sistema. Ele verifica se os arquivos existem no disco, chama `mapear_fpga` e `reset_coprocessador`, envia os parâmetros fixos da rede (`enviar_bias`, `enviar_beta` e `enviar_pesos`) uma única vez antes do loop do teste, e então itera sobre as 100 imagens: para cada uma, envia a imagem, dispara a inferência, registra o resultado e aplica um reset. Ao final, exibe a acurácia total. Os parâmetros da rede são enviados fora do loop porque não mudam entre imagens — reenviá-los a cada iteração desperdiçaria tempo enviando 200KB de pesos 100 vezes.
 
 <div align="center">
 <h1>

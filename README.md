@@ -8,12 +8,12 @@
 
 - [Introdução](#introdução)
 - [Requisitos Principais](#requisitos-principais)
-  <details>
+<details>
   - [Entrada e Saída](#entrada-e-saída)
   - [Interface MMIO com o Coprocessador](#interface-mmio-com-o-coprocessador)
   - [Conjunto de Instruções (ISA)](#conjunto-de-instruções-isa)
   - [Arquivos Binários de Entrada](#arquivos-binários-de-entrada)
-  </details>
+</details>
 - [Fundamentação Teórica](#fundamentação-teórica)
   - [Mapeamento de Memória (MMIO)](#mapeamento-de-memória-mmio)
   - [Syscalls Linux em Assembly ARM](#syscalls-linux-em-assembly-arm)

@@ -39,14 +39,17 @@
 - [Referências](#referências)
 
 ---
+<div align="center">
+<h1>
 
 ## Introdução
 
-Este documento descreve o desenvolvimento do Marco 2 de um sistema embarcado para classificação de dígitos numéricos em um SoC heterogêneo. O sistema completo combina um coprocessador implementado em Verilog na FPGA Cyclone V da placa DE1-SoC — desenvolvido no Marco 1 — com um driver em linguagem Assembly ARMv7 executado no processador ARM (HPS) sob Linux, integrado a uma aplicação em C.
+</h1>
+</div>
 
-O objetivo do Marco 2 é desenvolver o driver responsável por toda a comunicação entre o processador ARM e o coprocessador na FPGA, além de uma camada de software em C que controla o fluxo de inferência. O driver é implementado como uma biblioteca de funções em Assembly ARMv7, chamadas diretamente pelo programa C. Ele carrega os parâmetros da rede neural a partir de arquivos binários no disco, os envia ao coprocessador via MMIO, dispara a inferência e retorna o dígito predito.
+  Este documento descreve o desenvolvimento do Marco 2 de um sistema embarcado para classificação de dígitos numéricos em um SoC heterogêneo. O sistema completo combina um coprocessador implementado em Verilog na FPGA Cyclone V da placa DE1-SoC — desenvolvido no Marco 1 — com um driver em linguagem Assembly ARMv7 executado no processador ARM (HPS) sob Linux, integrado a uma aplicação em C. O coprocessador base para o driver em questão foi projetado por Maike de Oliveira, seu repositório original pode ser encontrado em: github.com/DestinyWolf/Problema_SD_2026_1. Entretanto, algumas alterações foram feitas para que o driver fosse capaz de se conectar a ele. O modelo alterado esta disponível neste repositório na pasta `/coprocessador`.
 
-O sistema foi validado com 100 imagens do dataset MNIST (10 imagens por dígito), atingindo 83% de acurácia.
+  O objetivo do Marco 2 é desenvolver o driver responsável por toda a comunicação entre o processador ARM e o coprocessador na FPGA, além de uma camada de software em C que controla o fluxo de inferência. O driver é implementado como uma biblioteca de funções em Assembly ARMv7, chamadas diretamente pelo programa C. Ele carrega os parâmetros da rede neural a partir de arquivos binários no disco, os envia ao coprocessador via MMIO, dispara a inferência e retorna o dígito predito.
 
 ---
 

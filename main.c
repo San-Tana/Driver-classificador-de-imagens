@@ -61,7 +61,7 @@ int main(void) {
         reset_coprocessador();
     }
 
-    // Exibe o resultado final — como são 100 imagens, acertos == porcentagem
+    // Exibe o resultado final, como são 100 imagens, acertos == porcentagem
     printf("\nAcertos: %d/100\n", acertos);
     printf("Acuracia: %d%%\n", acertos);
 

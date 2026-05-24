@@ -48,9 +48,9 @@
 </h1>
 </div>
 
-  Este documento descreve o desenvolvimento do Marco 2 de um sistema embarcado para classificação de dígitos numéricos em um SoC heterogêneo. O sistema completo combina um coprocessador implementado em Verilog na FPGA Cyclone V da placa DE1-SoC — desenvolvido no Marco 1 — com um driver em linguagem Assembly ARMv7 executado no processador ARM (HPS) sob Linux, integrado a uma aplicação em C. O coprocessador base para o driver em questão foi projetado por Maike de Oliveira, seu repositório original pode ser encontrado em: github.com/DestinyWolf/Problema_SD_2026_1 e é recomendado para aqueles que queiram se aprofundar no funcionamento do coprocessador. Entretanto, algumas alterações foram feitas para que o driver fosse capaz de se conectar a ele. O modelo alterado esta disponível neste repositório no diretório `coprocessador/`.
+  Este documento descreve o desenvolvimento do Marco 2 de um sistema embarcado para classificação de dígitos numéricos. O sistema completo combina um coprocessador implementado em Verilog na FPGA Cyclone V da placa DE1-SoC, desenvolvido no Marco 1, com um driver em linguagem Assembly ARMv7 executado no processador ARM (HPS) sob Linux, integrado a uma aplicação em C. O coprocessador base para o driver em questão foi projetado por Maike de Oliveira, seu repositório original pode ser encontrado em: github.com/DestinyWolf/Problema_SD_2026_1 e é recomendado para aqueles que queiram se aprofundar no funcionamento do coprocessador. Entretanto, algumas alterações foram feitas para que o driver fosse capaz de se conectar a ele. O modelo alterado esta disponível neste repositório no diretório `coprocessador/`.
 
-  O objetivo do Marco 2 é desenvolver o driver responsável por toda a comunicação entre o processador ARM e o coprocessador na FPGA, além de uma camada de software em C que controla o fluxo de inferência. O driver é implementado como uma biblioteca de funções em Assembly ARMv7, chamadas diretamente pelo programa C. Ele carrega os parâmetros da rede neural a partir de arquivos binários no disco, os envia ao coprocessador via MMIO, dispara a inferência e retorna o dígito predito.
+  O objetivo do Marco 2 é desenvolver o driver responsável por toda a comunicação entre o processador ARM e o coprocessador na FPGA, além de uma interface de programação de aplicações (API) em C que controla o fluxo de inferência. O driver é implementado como uma biblioteca de funções em Assembly ARMv7, chamadas diretamente pelo programa C. Ele carrega os parâmetros da rede neural a partir de arquivos binários no disco, os envia ao coprocessador via MMIO, dispara a inferência e retorna o dígito predito.
 
 <div align="center">
 <h1>
@@ -131,11 +131,11 @@ Em Assembly ARMv7 Linux, as chamadas de sistema são feitas nas funções `mapea
 
 ### Representação em Ponto Fixo Q4.12
 
-Os parâmetros da rede neural são armazenados no formato Q4.12: inteiros de 16 bits com sinal, onde os 12 bits menos significativos representam a parte fracionária e os 4 bits mais significativos representam a parte inteira, incluindo sinal. Os arquivos binários foram gerados em big-endian pelo Python/NumPy. Por isso, após cada `LDRH` (Carrega 2 bytes em little-endian), é aplicada a instrução `REV16` para inverter a ordem dos bytes antes de montar a instrução para o coprocessador.
+Os parâmetros da rede neural são armazenados no formato Q4.12: inteiros de 16 bits com sinal, onde os 12 bits menos significativos representam a parte fracionária e os 4 bits mais significativos representam a parte inteira, incluindo sinal. Os arquivos binários foram gerados em big-endian. Por isso, após cada `LDRH` (Carrega 2 bytes em little-endian), é aplicada a instrução `REV16` para inverter a ordem dos bytes antes de montar a instrução para o coprocessador.
 
 ### Protocolo de Comunicação com o Coprocessador
 
-O handshake para cada instrução funciona da seguinte forma:
+A sincronização para cada instrução funciona da seguinte forma:
 
 1. Escreve a instrução de 32 bits no registrador `data_in` (offset `0x20`)
 2. Ativa o sinal `enable` escrevendo `1` no `pio_signals` (offset `0x10`)
@@ -146,7 +146,7 @@ Para `STORE_WEIGHTS_ADDR` (opcode 1), o coprocessador retorna ao estado IDLE sem
 
 ### Interworking Thumb–ARM
 
-O GCC por padrão compila código C em Thumb-2, enquanto o assembly do driver é escrito em ARM (A32). Quando código Thumb chama uma função ARM, o processador precisa trocar de modo — isso é chamado de interworking. Para funcionar corretamente sem a flag `-marm`, o arquivo assembly precisa de três declarações:
+O GCC por padrão compila código C em Thumb-2, enquanto o assembly do driver é escrito em ARM (A32). Quando código Thumb chama uma função ARM, o processador precisa trocar de modo — isso é chamado de interworking. Para funcionar corretamente, o arquivo assembly precisa de três declarações:
 
 - `.syntax unified` — Ativa a sintaxe ARM unificada (UAL)
 - `.arm` — Declara que o código a seguir é ARM, não Thumb
@@ -162,7 +162,7 @@ O GCC por padrão compila código C em Thumb-2, enquanto o assembly do driver é
 
 ### Arquitetura Geral do Driver
 
-O driver é organizado como uma biblioteca de funções em Assembly ARMv7, linkada diretamente com o programa C. Não há `_start` — o ponto de entrada é o `main` do C. O endereço da ponte FPGA é obtido por `mapear_fpga` através do Syscall e armazenado em uma variável global (`base_mmio`) na seção `.data` do assembly, acessível por todas as funções.
+O driver é organizado como uma biblioteca de funções em Assembly ARMv7, linkada diretamente com o programa C. O ponto de entrada é o `main` do C. O endereço da ponte FPGA é obtido por `mapear_fpga` através do Syscall e armazenado em uma variável global (`base_mmio`) na seção `.data` do assembly, acessível por todas as funções.
 
 | Função                       | Responsabilidade                                                |
 |------------------------------|-----------------------------------------------------------------|
@@ -220,7 +220,7 @@ O `driver.h` é o contrato entre o C e o Assembly. Ele define as constantes do h
 
 ### Aplicação em C — main.c
 
-O `main.c` é o orquestrador do sistema. Ele verifica se os arquivos existem no disco, chama `mapear_fpga` e `reset_coprocessador`, envia os parâmetros fixos da rede (`enviar_bias`, `enviar_beta` e `enviar_pesos`) uma única vez antes do loop do teste, e então itera sobre as 100 imagens: para cada uma, envia a imagem, dispara a inferência, registra o resultado e aplica um reset. Ao final, exibe a acurácia total. Os parâmetros da rede são enviados fora do loop porque não mudam entre imagens — reenviá-los a cada iteração desperdiçaria tempo enviando 200KB de pesos 100 vezes.
+O `main.c` é o orquestrador do sistema. Ele verifica se os arquivos existem no disco, chama `mapear_fpga` e `reset_coprocessador`, envia os parâmetros fixos da rede (`enviar_bias`, `enviar_beta` e `enviar_pesos`) uma única vez antes do loop do teste, e então itera sobre as 100 imagens: para cada uma, envia a imagem, dispara a inferência, registra o resultado e aplica um reset. Ao final, exibe a acurácia total. Os parâmetros da rede são enviados fora do loop porque não mudam entre imagens, reenviá-los a cada iteração desperdiçaria tempo enviando esses dados 100 vezes.
 
 <div align="center">
 <h1>
@@ -243,8 +243,6 @@ Na DE1-SoC (Linux ARM), C e assembly são compilados e linkados juntos em um ún
 as -o driver.o driver.s
 gcc -o main main.c driver.o
 ```
-
-Não é necessário usar `-marm` graças às diretivas `.syntax unified`, `.arm` e `.type %function` no assembly.
 
 ### Execução
 
@@ -271,7 +269,7 @@ sudo su
 
 **R2 destruído pelo open() em carregar_arquivo.** O tamanho do buffer chegava em R2 e era usado depois pelo `read`. Porém, a syscall `open` pode modificar R2, perdendo o tamanho. A correção foi salvar R2 em R6 antes do open e restaurá-lo para R2 antes do read.
 
-**Flag DONE stale causando saída prematura da espera de inferência.** Após o envio do último peso, a flag DONE ficava em 1. Quando `iniciar_inferencia` era chamada e o START era enviado, o loop de polling encontrava DONE=1 (do peso anterior) imediatamente e retornava antes da inferência terminar, lendo um resultado inválido. A correção foi adicionar um pulso de `clr_operation` antes do START, garantindo DONE=0 antes de disparar a inferência.
+**Flag DONE stale causando saída prematura da espera de inferência.** Após o envio do último peso, a flag DONE ficava em 1. Quando `iniciar_inferencia` era chamada e o START era enviado, o loop de polling encontrava DONE = 1 (do peso anterior) imediatamente e retornava antes da inferência terminar, lendo um resultado inválido. A correção foi adicionar um pulso de `clr_operation` antes do START, garantindo DONE=0 antes de disparar a inferência.
 
 **Segmentation Fault por relocation de variável global.** Uma versão intermediária tentou passar o endereço da ponte como variável global `.word 0` no assembly, armazenada por `mapear_fpga` e lida pelas demais funções via `LDR R4, =base_mmio; LDR R4, [R4]`. Problemas de relocation ao linkar o objeto assembly com o C faziam com que as funções lessem um endereço inválido ou zero. A solução foi manter a variável `base_mmio` no `.data` do assembly com as diretivas de interworking corretas.
 
@@ -312,9 +310,9 @@ O dígito 1 obteve acurácia perfeita, enquanto o dígito 5 foi o mais difícil 
 
 O driver desenvolvido neste marco cumpre o objetivo de estabelecer a comunicação entre o processador ARM e o coprocessador ELM na FPGA, realizando todo o fluxo de carregamento de parâmetros e inferência de forma integrada com a aplicação C.
 
-A principal dificuldade do desenvolvimento foi lidar com os detalhes de baixo nível do Assembly ARMv7 em conjunto com as convenções do Linux: a ordem exata dos argumentos nas syscalls, a preservação dos registradores callee-saved, o offset correto para o mmap2 e o interworking entre os modos Thumb e ARM. Esses aspectos exigiram atenção constante durante a depuração, pois erros nessa camada geralmente não produzem mensagens de erro claras — o programa simplesmente trava ou produz resultados incorretos.
+A principal dificuldade do desenvolvimento foi lidar com os detalhes de baixo nível do Assembly ARMv7 em conjunto com as convenções do Linux: a ordem exata dos argumentos nas syscalls, a preservação dos registradores callee-saved, o offset correto para o mmap2 e o interworking entre os modos Thumb e ARM. Esses aspectos exigiram atenção constante durante a depuração, pois erros nessa camada geralmente não produzem mensagens de erro claras, o programa simplesmente trava ou produz resultados incorretos.
 
-A experiência reforçou a compreensão prática da interface entre software e hardware em sistemas embarcados: desde a convenção de chamada AAPCS, passando pelo mapeamento de endereços físicos via MMIO, até o protocolo de handshake com o coprocessador e os detalhes de endianness dos dados. O sistema está funcional e validado com 83% de acurácia no dataset de teste.
+A experiência reforçou a compreensão prática da interface entre software e hardware em sistemas embarcados: desde a convenção de chamada AAPCS, passando pelo mapeamento de endereços físicos via MMIO, até o protocolo de sincronização com o coprocessador e os detalhes de endianness dos dados. O sistema está funcional e validado com 83% de acurácia no dataset de teste.
 
 <div align="center">
 <h1>

@@ -146,7 +146,7 @@ Para `STORE_WEIGHTS_ADDR` (opcode 1), o coprocessador retorna ao estado IDLE sem
 
 ### Interworking Thumb–ARM
 
-O GCC por padrão compila código C em Thumb-2, enquanto o assembly do driver é escrito em ARM (A32). Quando código Thumb chama uma função ARM, o processador precisa trocar de modo — isso é chamado de interworking. Para funcionar corretamente, o arquivo assembly precisa de três declarações:
+O GCC por padrão compila código C em Thumb-2, enquanto o assembly do driver é escrito em ARM (A32). Quando código Thumb chama uma função ARM, o processador precisa trocar de modo — isso é chamado de interworking. Para funcionar corretamente. Para funcionar corretamente sem a flag -marm, o arquivo assembly precisa de três declarações: o arquivo assembly precisa de três declarações:
 
 - `.syntax unified` — Ativa a sintaxe ARM unificada (UAL)
 - `.arm` — Declara que o código a seguir é ARM, não Thumb

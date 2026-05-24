@@ -57,7 +57,7 @@
 
 ### Entrada e Saída
 
-O sistema recebe como entrada quatro arquivos binários localizados no diretório `data/`, contendo os parâmetros da rede neural ELM e a imagem a ser classificada. A saída é o dígito predito (0 a 9), retornado como valor inteiro pela função `iniciar_inferencia` e impresso pelo programa C.
+O sistema recebe como entrada quatro arquivos binários localizados no diretório `data/`, contendo os parâmetros da rede neural ELM e a imagem a ser classificada. A saída é o dígito predito (0 a 9), retornado como valor inteiro pela função `iniciar_inferencia` e impresso pelo programa `main.c`.
 
 ### Interface MMIO com o Coprocessador
 

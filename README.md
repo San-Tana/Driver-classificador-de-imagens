@@ -14,7 +14,7 @@
   - [Arquivos Binários de Entrada](#arquivos-binários-de-entrada)
 - [Fundamentação Teórica](#fundamentação-teórica)
   - [Mapeamento de Memória (MMIO)](#mapeamento-de-memória-mmio)
-  - [Syscalls Linux em Assembly ARM](#syscalls-linux-em-assembly-arm)
+  - [System Calls Linux em Assembly ARM](#system-calls-linux-em-assembly-arm)
   - [Representação em Ponto Fixo Q4.12](#representação-em-ponto-fixo-q412)
   - [Protocolo de Comunicação com o Coprocessador](#protocolo-de-comunicação-com-o-coprocessador)
   - [Interworking Thumb–ARM](#interworking-thumbarm)
@@ -39,6 +39,7 @@
 - [Referências](#referências)
 
 ---
+
 <div align="center">
 <h1>
 
@@ -47,17 +48,21 @@
 </h1>
 </div>
 
-  Este documento descreve o desenvolvimento do Marco 2 de um sistema embarcado para classificação de dígitos numéricos em um SoC heterogêneo. O sistema completo combina um coprocessador implementado em Verilog na FPGA Cyclone V da placa DE1-SoC — desenvolvido no Marco 1 — com um driver em linguagem Assembly ARMv7 executado no processador ARM (HPS) sob Linux, integrado a uma aplicação em C. O coprocessador base para o driver em questão foi projetado por Maike de Oliveira, seu repositório original pode ser encontrado em: github.com/DestinyWolf/Problema_SD_2026_1. Entretanto, algumas alterações foram feitas para que o driver fosse capaz de se conectar a ele. O modelo alterado esta disponível neste repositório na pasta `/coprocessador`.
+  Este documento descreve o desenvolvimento do Marco 2 de um sistema embarcado para classificação de dígitos numéricos em um SoC heterogêneo. O sistema completo combina um coprocessador implementado em Verilog na FPGA Cyclone V da placa DE1-SoC — desenvolvido no Marco 1 — com um driver em linguagem Assembly ARMv7 executado no processador ARM (HPS) sob Linux, integrado a uma aplicação em C. O coprocessador base para o driver em questão foi projetado por Maike de Oliveira, seu repositório original pode ser encontrado em: github.com/DestinyWolf/Problema_SD_2026_1. Entretanto, algumas alterações foram feitas para que o driver fosse capaz de se conectar a ele. O modelo alterado esta disponível neste repositório no diretório `coprocessador/`.
 
   O objetivo do Marco 2 é desenvolver o driver responsável por toda a comunicação entre o processador ARM e o coprocessador na FPGA, além de uma camada de software em C que controla o fluxo de inferência. O driver é implementado como uma biblioteca de funções em Assembly ARMv7, chamadas diretamente pelo programa C. Ele carrega os parâmetros da rede neural a partir de arquivos binários no disco, os envia ao coprocessador via MMIO, dispara a inferência e retorna o dígito predito.
 
----
+<div align="center">
+<h1>
 
 ## Requisitos Principais
 
+</h1>
+</div>
+
 ### Entrada e Saída
 
-O sistema recebe como entrada quatro arquivos binários localizados no diretório `data/`, contendo os parâmetros da rede neural ELM e a imagem a ser classificada. A saída é o dígito predito (0 a 9), retornado como valor inteiro pela função `iniciar_inferencia` e impresso pelo programa `main.c`.
+O sistema recebe como entrada quatro arquivos binários localizados no diretório `data/`, contendo os parâmetros da rede neural ELM e as imagens a serem classificadas. A saída é o dígito predito (0 a 9), retornado como valor inteiro pela função `iniciar_inferencia` e impresso pelo programa `main.c`.
 
 ### Interface MMIO com o Coprocessador
 
@@ -69,7 +74,7 @@ O coprocessador é acessado via mapeamento de memória a partir do endereço fí
 | `0x10` | `pio_signals`  | enable (bit 0), clr_operation (bit 1), rst (bit 2) |
 | `0x20` | `pio_data_in`  | Escrita da instrução de 32 bits                 |
 
-O mapeamento é feito via syscall `mmap2` (syscall 192), acessando `/dev/mem` com permissão de leitura e escrita. O offset passado ao mmap2 é `0xFF200` — o endereço físico dividido pelo tamanho de página de 4096 bytes.
+O mapeamento é feito via chamada de sistema — system call — `mmap2` (syscall 192), acessando `/dev/mem` com permissão de leitura e escrita. O offset passado ao mmap2 é `0xFF200` — o endereço físico dividido pelo tamanho de página de 4096 bytes.
 
 ### Conjunto de Instruções (ISA)
 
@@ -97,11 +102,15 @@ Os arquivos devem estar no diretório `data/`:
 | `data/b_q.bin`    | 256 bytes    | Bias em Q4.12 (int16)           |
 | `data/beta_q.bin` | 2.560 bytes  | Pesos beta em Q4.12 (int16)     |
 
-Para o teste com 100 imagens, os arquivos de imagem devem ser nomeados `data/0.bin` até `data/99.bin`.
+Caso queira inserir novas imagens para o teste com 100 imagens, os arquivos de imagem devem ser nomeados `data/0.bin` até `data/99.bin`. Os arquivos de imagem usados nos testes de predição para definir a acurácia já estão no diretório `data/`, 10 imagens para cada digito de 0 à 9. 
 
----
+<div align="center">
+<h1>
 
 ## Fundamentação Teórica
+
+</h1>
+</div>
 
 ### Mapeamento de Memória (MMIO)
 
@@ -109,9 +118,9 @@ Em sistemas Linux com FPGA, a forma padrão de o processador acessar os registra
 
 Na DE1-SoC, a ponte HPS-to-FPGA Lightweight mapeia os periféricos da FPGA a partir do endereço físico `0xFF200000`. Após o mapeamento, o driver escreve e lê nesses endereços usando instruções `STR` e `LDR` comuns do ARM, como se fossem posições de memória normais.
 
-### Syscalls Linux em Assembly ARM
+### System Calls Linux em Assembly ARM
 
-Em Assembly ARMv7 Linux, as chamadas de sistema são feitas carregando o número da syscall no registrador R7, os argumentos nos registradores R0 a R5, e executando a instrução `SVC 0`. As syscalls utilizadas no driver são:
+Em Assembly ARMv7 Linux, as chamadas de sistema são feitas nas funções `mapear_fpga` e `carregar_arquivo`, carregando o número da syscall no registrador R7, os argumentos nos registradores R0 a R5, e executando a instrução `SVC 0`. As syscalls utilizadas no driver são:
 
 | Syscall | Número | Uso no driver                          |
 |---------|--------|----------------------------------------|
@@ -122,7 +131,7 @@ Em Assembly ARMv7 Linux, as chamadas de sistema são feitas carregando o número
 
 ### Representação em Ponto Fixo Q4.12
 
-Os parâmetros da rede neural são armazenados no formato Q4.12: inteiros de 16 bits com sinal, onde os 12 bits menos significativos representam a parte fracionária. Os arquivos binários foram gerados em big-endian pelo Python/NumPy. Por isso, após cada `LDRH` (que carrega 2 bytes em little-endian no ARM), é aplicada a instrução `REV16` para inverter a ordem dos bytes antes de montar a instrução para o coprocessador.
+Os parâmetros da rede neural são armazenados no formato Q4.12: inteiros de 16 bits com sinal, onde os 12 bits menos significativos representam a parte fracionária e os 4 bits mais significativos representam a parte inteira, incluindo sinal. Os arquivos binários foram gerados em big-endian pelo Python/NumPy. Por isso, após cada `LDRH` (Carrega 2 bytes em little-endian), é aplicada a instrução `REV16` para inverter a ordem dos bytes antes de montar a instrução para o coprocessador.
 
 ### Protocolo de Comunicação com o Coprocessador
 
@@ -139,17 +148,21 @@ Para `STORE_WEIGHTS_ADDR` (opcode 1), o coprocessador retorna ao estado IDLE sem
 
 O GCC por padrão compila código C em Thumb-2, enquanto o assembly do driver é escrito em ARM (A32). Quando código Thumb chama uma função ARM, o processador precisa trocar de modo — isso é chamado de interworking. Para funcionar corretamente sem a flag `-marm`, o arquivo assembly precisa de três declarações:
 
-- `.syntax unified` — ativa a sintaxe ARM unificada (UAL)
-- `.arm` — declara que o código a seguir é ARM, não Thumb
-- `.type funcname, %function` antes de cada função exportada — informa ao linker que é uma função ARM, fazendo com que ele gere automaticamente os stubs de interworking para as chamadas vindas do C
+- `.syntax unified` — Ativa a sintaxe ARM unificada (UAL)
+- `.arm` — Declara que o código a seguir é ARM, não Thumb
+- `.type funcname, %function` — Usada antes de cada função exportada. Informa ao linker que é uma função ARM, fazendo com que ele gere automaticamente os stubs de interworking para as chamadas vindas do C
 
----
+<div align="center">
+<h1>
 
 ## Descrição da Solução
 
+</h1>
+</div>
+
 ### Arquitetura Geral do Driver
 
-O driver é organizado como uma biblioteca de funções em Assembly ARMv7, linkada diretamente com o programa C. Não há `_start` — o ponto de entrada é o `main` do C. O endereço da ponte FPGA é obtido por `mapear_fpga` e armazenado em uma variável global (`base_mmio`) na seção `.data` do assembly, acessível por todas as funções.
+O driver é organizado como uma biblioteca de funções em Assembly ARMv7, linkada diretamente com o programa C. Não há `_start` — o ponto de entrada é o `main` do C. O endereço da ponte FPGA é obtido por `mapear_fpga` através do Syscall e armazenado em uma variável global (`base_mmio`) na seção `.data` do assembly, acessível por todas as funções.
 
 | Função                       | Responsabilidade                                                |
 |------------------------------|-----------------------------------------------------------------|
@@ -166,34 +179,32 @@ O driver é organizado como uma biblioteca de funções em Assembly ARMv7, linka
 
 ### mapear_fpga
 
-Abre `/dev/mem` com syscall `open` (O_RDWR), e em seguida chama `mmap2` com os argumentos: endereço NULL, tamanho 4096, proteção PROT_READ|PROT_WRITE, flag MAP_SHARED, o file descriptor obtido, e o offset de página `0xFF200`. O endereço virtual mapeado é salvo na variável global `base_mmio` e também retornado em R0. Um ponto importante: R7 é o registrador de número de syscall e é callee-saved segundo a AAPCS — por isso `mapear_fpga` inclui R7 no seu `PUSH/POP`, garantindo que o valor do registrador seja preservado para o C.
+Abre `/dev/mem` com syscall `open` (O_RDWR) e em seguida chama `mmap2` com os argumentos: endereço NULL, tamanho 4096, proteção PROT_READ|PROT_WRITE, flag MAP_SHARED, o file descriptor obtido, e o offset de página `0xFF200`. O endereço virtual mapeado é salvo na variável global `base_mmio` e também retornado em R0. Um ponto importante: R7 é o registrador de número de syscall e é callee-saved segundo a AAPCS — por isso `mapear_fpga` inclui R7 no seu `PUSH/POP`, garantindo que o valor do registrador seja preservado para o C.
 
 ### carregar_arquivo
 
-Recebe em R0 o caminho do arquivo, em R1 o endereço do buffer de destino, e em R2 o tamanho da leitura. Antes de executar a syscall `open`, salva R2 em R6, pois o kernel pode modificar R2 durante a syscall. Após o `open`, salva o file descriptor em R4, chama `read` com o buffer e tamanho originais, e então chama `close`. Todos os registradores R4–R8 e LR são salvos na pilha no início e restaurados ao final.
+Recebe em R0 o caminho do arquivo, em R1 o endereço do buffer de destino, e em R2 o tamanho da leitura. Antes de executar a syscall `open`, salva R2 em R6 por garantia para recuperar o valor caso o kernel modifique R2 durante a syscall. Após o `open`, salva o file descriptor em R4, chama `read` com o buffer e tamanho originais, e então chama `close`. Para garantir que dados importantes não sejam perdidos, todos os registradores R4–R8 e LR são salvos na pilha no início e restaurados ao final da rotina.
 
 ### enviar_instrucao e enviar_instrucao_sem_done
 
-`enviar_instrucao` recebe em R0 a instrução de 32 bits, escreve no `data_in`, ativa o `enable` e entra em loop de polling no `data_out` testando o bit 4 (DONE) com a instrução `TST`. Quando DONE=1, desativa o enable e retorna.
-
-`enviar_instrucao_sem_done` faz apenas a escrita e o pulso de enable, sem entrar no polling. É usada exclusivamente para o opcode 1 (STORE_WEIGHTS_ADDR), que não gera DONE.
+`enviar_instrucao` recebe em R0 a instrução de 32 bits, escreve no `data_in` e ativa o `enable`. A partir daí, entra em loop de polling no `data_out` testando o bit 4 (DONE) com a instrução `TST`. Quando DONE=1, desativa o enable e retorna. `enviar_instrucao_sem_done` faz apenas a escrita e o pulso de enable, sem entrar no polling. É usada exclusivamente para o opcode 1 (STORE_WEIGHTS_ADDR), que não gera DONE.
 
 ### enviar_bias, enviar_beta, enviar_img
 
-Cada função carrega `base_mmio` em R4, chama `carregar_arquivo` para ler o arquivo no buffer, e percorre o buffer em loop montando e enviando as instruções:
+Cada função carrega `base_mmio` em R4, chama `carregar_arquivo` para ler o arquivo no buffer, e percorre o buffer em loop montando e enviando as instruções com `enviar_instrucao`:
 
-- **bias**: `LDRH` + `REV16` + `LSL #10` (valor nos bits [25:10]) + `LSL #3` (índice nos bits [9:3]) + opcode 3
-- **beta**: `LDRH` + `REV16` + `LSL #14` (valor nos bits [29:14]) + `LSL #3` (índice nos bits [13:3]) + opcode 4
-- **img**: `LDRB` (1 byte, sem REV16) + `LSL #13` (valor nos bits [20:13]) + `LSL #3` (índice nos bits [12:3]) + opcode 0
+- **bias**: Usa `LDRH` + `REV16` para carregar 2 bytes do valor do buffer e inverte os bytes para o formato little-endin, depois desloca os bits com `LSL #10` (valor nos bits [25:10]). Desloca o índice atual com `LSL #3` (índice nos bits [9:3]) e termina com o opcode 3 (STORE_BIAS).
+- **beta**: Usa `LDRH` + `REV16` com o mesmo intuíto de carregar o valor do buffer, depois desloca os bits com `LSL #14` (valor nos bits [29:14]). Desloca o índice com `LSL #3` (índice nos bits [13:3]) e termina com o opcode 4 (STORE_BETA).
+- **img**: Usa `LDRB` para carregar apenas 1 byte, e desloca os bits usando `LSL #13` (valor nos bits [20:13]). Desloca o índice atual com `LSL #3` (índice nos bits [12:3]) e termina com o opcode 0 (STORE_IMG).
+
+Perceba que `enviar_img` só carrega 1 byte ao invés de 2 bytes como `enviar_bias` e `enviar_beta` (E assim como `enviar_peso`). A formatação dos valores da imagem em Q4.12 é feita dentro do coprocessador, então ela é enviada com a extensão normal de bits (8 bits por pixel).
 
 ### enviar_peso
 
-O envio dos 100.352 pesos é o mais custoso. Para cada peso, são enviadas duas instruções:
+Funciona de forma similar as outras rotinas de envio de dados, mas o envio dos pesos é o mais custoso. Os 100.352 valores precisam de um índice de 17 bits. Com o valor de 16 bits, opcode de 3 bits e a instrução de 32 bits, é inviável uma única instrução conter todos os operandos necessários. Portanto, para cada peso, são enviadas duas instruções:
 
-1. **STORE_WEIGHTS_ADDR** (opcode 1): índice nos bits [19:3], sem polling
-2. **STORE_WEIGHTS_VALUE** (opcode 2): valor nos bits [18:3], com polling de DONE
-
-Essa divisão é necessária porque o índice de 17 bits não caberia junto ao valor de 16 bits em uma instrução de 32 bits com opcode de 3 bits.
+1. **STORE_WEIGHTS_ADDR**: Envia apenas o índice nos bits [19:3] com o opcode 1, sem polling.
+2. **STORE_WEIGHTS_VALUE**: Envia o valor nos bits [18:3] logo em seguida com o opcode 2, com polling de DONE
 
 ### iniciar_inferencia
 
@@ -213,9 +224,13 @@ O `main.c` é o orquestrador do sistema. Ele verifica se os arquivos existem no 
 
 Os parâmetros da rede são enviados fora do loop porque não mudam entre imagens — reenviá-los a cada iteração desperdiçaria tempo enviando 200KB de pesos 100 vezes.
 
----
+<div align="center">
+<h1>
 
 ## Modo de Uso
+
+</h1>
+</div>
 
 ### Estrutura de Diretórios
 
@@ -242,9 +257,13 @@ sudo su
 ./main
 ```
 
----
+<div align="center">
+<h1>
 
 ## Problemas Encontrados e Correções
+
+</h1>
+</div>
 
 **Offset incorreto no mmap2.** O endereço `0xFF200000` foi inicialmente passado diretamente como offset para o mmap2. A syscall espera o offset em unidades de páginas (4096 bytes), então o correto é `0xFF200000 / 4096 = 0xFF200`. Sem essa correção, o mapeamento apontava para uma região errada e todas as operações MMIO falhavam silenciosamente.
 
@@ -258,9 +277,13 @@ sudo su
 
 **Segmentation Fault por relocation de variável global.** Uma versão intermediária tentou passar o endereço da ponte como variável global `.word 0` no assembly, armazenada por `mapear_fpga` e lida pelas demais funções via `LDR R4, =base_mmio; LDR R4, [R4]`. Problemas de relocation ao linkar o objeto assembly com o C faziam com que as funções lessem um endereço inválido ou zero. A solução foi manter a variável `base_mmio` no `.data` do assembly com as diretivas de interworking corretas.
 
----
+<div align="center">
+<h1>
 
 ## Resultados
+
+</h1>
+</div>
 
 O sistema foi testado com 100 imagens do dataset MNIST, 10 por dígito, armazenadas nos arquivos `data/0.bin` a `data/99.bin`. Os resultados obtidos foram:
 
@@ -281,9 +304,13 @@ O sistema foi testado com 100 imagens do dataset MNIST, 10 por dígito, armazena
 
 O dígito 1 obteve acurácia perfeita, enquanto o dígito 5 foi o mais difícil (60%), provavelmente por ser visualmente semelhante a 6 e 9. Para uma ELM com pesos fixos rodando em hardware dedicado em FPGA, 83% é um resultado satisfatório.
 
----
+<div align="center">
+<h1>
 
 ## Conclusão
+
+</h1>
+</div>
 
 O driver desenvolvido neste marco cumpre o objetivo de estabelecer a comunicação entre o processador ARM e o coprocessador ELM na FPGA, realizando todo o fluxo de carregamento de parâmetros e inferência de forma integrada com a aplicação C.
 
@@ -291,9 +318,13 @@ A principal dificuldade do desenvolvimento foi lidar com os detalhes de baixo n�
 
 A experiência reforçou a compreensão prática da interface entre software e hardware em sistemas embarcados: desde a convenção de chamada AAPCS, passando pelo mapeamento de endereços físicos via MMIO, até o protocolo de handshake com o coprocessador e os detalhes de endianness dos dados. O sistema está funcional e validado com 83% de acurácia no dataset de teste.
 
----
+<div align="center">
+<h1>
 
 ## Referências
+
+</h1>
+</div>
 
 PATTERSON, David A.; HENNESSY, John L. **Computer Organization and Design: The Hardware/Software Interface, ARM Edition**. Amsterdam: Morgan Kaufmann, 2017.
 

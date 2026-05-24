@@ -1,4 +1,4 @@
-<div align="center">
+'  '<div align="center">
 <h1>
 
 ## Sumário
@@ -120,7 +120,7 @@ Na DE1-SoC, a ponte HPS-to-FPGA Lightweight mapeia os periféricos da FPGA a par
 
 ### System Calls Linux em Assembly ARM
 
-Em Assembly ARMv7 Linux, as chamadas de sistema são feitas nas funções `mapear_fpga` e `carregar_arquivo`, carregando o número da syscall no registrador R7, os argumentos nos registradores R0 a R5, e executando a instrução `SVC 0`. As syscalls utilizadas no driver são:
+Uma chamada de sistema é uma rotina que permite que um aplicativo de usuário solicite ações que requerem privilégios especiais. Em Assembly ARMv7 Linux, as chamadas de sistema são feitas nas funções `mapear_fpga` e `carregar_arquivo`, carregando o número da syscall no registrador R7, os argumentos nos registradores R0 a R5, e executando a instrução `SVC 0`. As syscalls utilizadas no driver são:
 
 | Syscall | Número | Uso no driver                          |
 |---------|--------|----------------------------------------|

@@ -1,9 +1,0 @@
-# Compilar o assembly
-as -o driver.o driver.s
-ld -o driver driver.o
-
-# Compilar o C
-gcc -o main main.c
-
-# Rodar
-sudo ./main

@@ -219,17 +219,8 @@ Os parâmetros da rede são enviados fora do loop porque não mudam entre imagen
 
 ### Estrutura de Diretórios
 
-```
-/projeto/
-├── driver.s        ← driver Assembly
-├── driver.h        ← header com constantes e declarações
-├── main.c          ← aplicação C
-└── data/
-    ├── w_in_q.bin
-    ├── b_q.bin
-    ├── beta_q.bin
-    ├── 0.bin ... 99.bin   ← imagens para o teste de 100 inferências
-```
+<img width="923" height="1600" alt="image" src="https://github.com/user-attachments/assets/5ec10c98-eb62-4ae2-aad3-456cbb4aaa6e" />
+
 
 ### Compilação
 

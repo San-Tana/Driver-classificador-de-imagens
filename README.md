@@ -8,7 +8,7 @@
 
 - [Introdução](#introdução)
 - [Requisitos Principais](#requisitos-principais)
-- <details>
+  <details>
   - [Entrada e Saída](#entrada-e-saída)
   - [Interface MMIO com o Coprocessador](#interface-mmio-com-o-coprocessador)
   - [Conjunto de Instruções (ISA)](#conjunto-de-instruções-isa)

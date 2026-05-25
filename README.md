@@ -74,7 +74,7 @@ O coprocessador é acessado via mapeamento de memória a partir do endereço fí
 | `0x10` | `pio_signals`  | enable (bit 0), clr_operation (bit 1), rst (bit 2) |
 | `0x20` | `pio_data_in`  | Escrita da instrução de 32 bits                 |
 
-O mapeamento é feito via chamada de sistema — system call — `mmap2` (syscall 192), acessando `/dev/mem` com permissão de leitura e escrita. O offset passado ao mmap2 é `0xFF200` — o endereço físico dividido pelo tamanho de página de 4096 bytes.
+O mapeamento é feito via chamada de sistema (system call, ou syscall) `mmap2` (syscall 192), acessando `/dev/mem` com permissão de leitura e escrita. O offset passado ao mmap2 é `0xFF200` — o endereço físico dividido pelo tamanho de página de 4096 bytes.
 
 ### Conjunto de Instruções (ISA)
 
@@ -146,7 +146,7 @@ Para `STORE_WEIGHTS_ADDR` (opcode 1), o coprocessador retorna ao estado IDLE sem
 
 ### Interworking Thumb–ARM
 
-O GCC por padrão compila código C em Thumb-2, enquanto o assembly do driver é escrito em ARM (A32). Quando código Thumb chama uma função ARM, o processador precisa trocar de modo — isso é chamado de interworking. Para funcionar corretamente. Para funcionar corretamente sem a flag -marm, o arquivo assembly precisa de três declarações: o arquivo assembly precisa de três declarações:
+O GCC por padrão compila código C em Thumb-2, enquanto o assembly do driver é escrito em ARM (A32). Quando código Thumb chama uma função ARM, o processador precisa trocar de modo, isso é chamado de interworking. Para funcionar corretamente. Para funcionar corretamente sem a flag -marm, o arquivo assembly precisa de três declarações: o arquivo assembly precisa de três declarações:
 
 - `.syntax unified` — Ativa a sintaxe ARM unificada (UAL)
 - `.arm` — Declara que o código a seguir é ARM, não Thumb

@@ -145,7 +145,8 @@ O handshake para cada instrução funciona da seguinte forma:
 
 Para `STORE_WEIGHTS_ADDR` (opcode 1), o coprocessador retorna ao estado IDLE sem passar pela memória, portanto não gera sinal DONE. Essa instrução é enviada sem polling.
 
-![Fluxo de envio de instrução ao coprocessador]<img width="100" height="400" alt="image" src="https://github.com/user-attachments/assets/a2749b8b-3a98-465f-a768-27c5582b7e82" />
+# Fluxo de envio de instrução ao coprocessador
+<img width="100" height="400" alt="image" src="https://github.com/user-attachments/assets/a2749b8b-3a98-465f-a768-27c5582b7e82" />
 
 ### Interworking Thumb–ARM
 

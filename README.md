@@ -119,6 +119,10 @@ Em sistemas Linux com FPGA, a forma padrão de o processador acessar os registra
 
 Na DE1-SoC, a ponte HPS-to-FPGA Lightweight mapeia os periféricos da FPGA a partir do endereço físico `0xFF200000`. Após o mapeamento, o driver escreve e lê nesses endereços usando instruções `STR` e `LDR` comuns do ARM, como se fossem posições de memória normais.
 
+### Mapeamento da ponte HPS-to-FPGA via mmap2
+<img width="370" height="360" alt="image" src="https://github.com/user-attachments/assets/875105c8-0139-4819-9b06-ca3af995745f" />
+
+
 ### System Calls Linux em Assembly ARM
 
 Uma chamada de sistema é uma rotina que permite que um aplicativo de usuário solicite ações que requerem privilégios especiais. No código em Assembly, essas chamadas são feitas nas funções `mapear_fpga` e `carregar_arquivo`, carregando o número da syscall no registrador R7, os argumentos nos registradores R0 a R5, e executando a instrução `SVC 0`. As syscalls utilizadas no driver são:
@@ -145,7 +149,7 @@ O handshake para cada instrução funciona da seguinte forma:
 
 Para `STORE_WEIGHTS_ADDR` (opcode 1), o coprocessador retorna ao estado IDLE sem passar pela memória, portanto não gera sinal DONE. Essa instrução é enviada sem polling.
 
-# Fluxo de envio de instrução ao coprocessador
+### Fluxo de envio de instrução ao coprocessador
 <img width="100" height="400" alt="image" src="https://github.com/user-attachments/assets/a2749b8b-3a98-465f-a768-27c5582b7e82" />
 
 ### Interworking Thumb–ARM

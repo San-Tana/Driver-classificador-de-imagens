@@ -145,6 +145,8 @@ O handshake para cada instrução funciona da seguinte forma:
 
 Para `STORE_WEIGHTS_ADDR` (opcode 1), o coprocessador retorna ao estado IDLE sem passar pela memória, portanto não gera sinal DONE. Essa instrução é enviada sem polling.
 
+![Fluxo de envio de instrução ao coprocessador]<img width="100" height="400" alt="image" src="https://github.com/user-attachments/assets/a2749b8b-3a98-465f-a768-27c5582b7e82" />
+
 ### Interworking Thumb–ARM
 
 O GCC por padrão compila código C em Thumb-2, enquanto o assembly do driver é escrito em ARM (A32). Quando código Thumb chama uma função ARM, o processador precisa trocar de modo, isso é chamado de interworking. Para funcionar corretamente. Para funcionar corretamente sem a flag -marm, o arquivo assembly precisa de três declarações: o arquivo assembly precisa de três declarações:
@@ -245,7 +247,7 @@ O `main.c` é o orquestrador do sistema. Ele verifica se os arquivos existem no 
 
 ### Estrutura de Diretórios
 
-<img width="923" height="1600" alt="image" src="https://github.com/user-attachments/assets/5ec10c98-eb62-4ae2-aad3-456cbb4aaa6e" />
+<img width="300" height="500" alt="image" src="https://github.com/user-attachments/assets/5ec10c98-eb62-4ae2-aad3-456cbb4aaa6e" />
 
 
 ### Compilação

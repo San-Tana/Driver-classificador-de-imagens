@@ -197,6 +197,9 @@ O driver é organizado como uma biblioteca de funções em Assembly ARMv7, linka
 | `iniciar_inferencia`         | Limpa DONE, dispara START, aguarda conclusão, retorna o dígito |
 | `reset_coprocessador`        | Pulsa o sinal de reset da FPGA                                 |
 
+### Hierarquia de chamadas do driver
+<img width="500" height="375" alt="image" src="https://github.com/user-attachments/assets/0807f077-8b50-43c0-a939-42059d6dff70" />
+
 ### mapear_fpga
 
 Abre `/dev/mem` com syscall `open` (O_RDWR) e em seguida chama `mmap2` com os argumentos: endereço NULL, tamanho 4096, proteção PROT_READ|PROT_WRITE, flag MAP_SHARED, o file descriptor obtido, e o offset de página `0xFF200`. O endereço virtual mapeado é salvo na variável global `base_mmio` e também retornado em R0. Um ponto importante: R7 é o registrador de número de syscall e é callee-saved segundo a AAPCS — por isso `mapear_fpga` inclui R7 no seu `PUSH/POP`, garantindo que o valor do registrador seja preservado para o C.

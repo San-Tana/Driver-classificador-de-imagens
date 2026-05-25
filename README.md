@@ -136,7 +136,7 @@ Os parâmetros da rede neural são armazenados no formato Q4.12: inteiros de 16 
 
 ### Protocolo de Comunicação com o Coprocessador
 
-A sincronização para cada instrução funciona da seguinte forma:
+O handshake para cada instrução funciona da seguinte forma:
 
 1. Escreve a instrução de 32 bits no registrador `data_in` (offset `0x20`)
 2. Ativa o sinal `enable` escrevendo `1` no `pio_signals` (offset `0x10`)
@@ -325,7 +325,7 @@ O driver desenvolvido neste marco cumpre o objetivo de estabelecer a comunicaç�
 
 A principal dificuldade do desenvolvimento foi lidar com os detalhes de baixo nível do Assembly ARMv7 em conjunto com as convenções do Linux: a ordem exata dos argumentos nas syscalls, a preservação dos registradores callee-saved, o offset correto para o mmap2 e o interworking entre os modos Thumb e ARM. Esses aspectos exigiram atenção constante durante a depuração, pois erros nessa camada geralmente não produzem mensagens de erro claras, o programa simplesmente trava ou produz resultados incorretos.
 
-A experiência reforçou a compreensão prática da interface entre software e hardware em sistemas embarcados: desde a convenção de chamada AAPCS, passando pelo mapeamento de endereços físicos via MMIO, até o protocolo de sincronização com o coprocessador e os detalhes de endianness dos dados. O sistema está funcional e validado com 83% de acurácia no dataset de teste.
+A experiência reforçou a compreensão prática da interface entre software e hardware em sistemas embarcados: desde a convenção de chamada AAPCS, passando pelo mapeamento de endereços físicos via MMIO, até o protocolo de handshake com o coprocessador e os detalhes de endianness dos dados. O sistema está funcional e validado com 83% de acurácia no dataset de teste.
 
 <div align="center">
 <h1>

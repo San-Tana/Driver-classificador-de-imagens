@@ -155,6 +155,13 @@ O GCC por padrão compila código C em Thumb-2, enquanto o assembly do driver é
 <div align="center">
 <h1>
 
+## Metodologia
+
+</h1>
+</div>
+
+A metodologia usada no projeto foi a do PBL (Problem Based Learning) com reuniões em sessões tutorial, onde a turma define meta e discute a solução do problema. Através dos roteiros disponibilizados pelos professores ajudaram no desenvolvimento do projeto, o LAB 0 foi importante para entender o funcionamento do terminal Linux com a placa DE1-SoC e o Lab 2 foi fundamental para compreendermos a integração FPGA-HPS, além de ter sido importante na utilização do coprocessador que foi disponibilizado por Maike.
+
 ## Descrição da Solução
 
 </h1>

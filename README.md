@@ -154,7 +154,7 @@ Para `STORE_WEIGHTS_ADDR` (opcode 1), o coprocessador retorna ao estado IDLE sem
 
 ### Interworking Thumb–ARM
 
-O GCC por padrão compila código C em Thumb-2, enquanto o assembly do driver é escrito em ARM (A32). Quando código Thumb chama uma função ARM, o processador precisa trocar de modo, isso é chamado de interworking. Para funcionar corretamente. Para funcionar corretamente sem a flag -marm, o arquivo assembly precisa de três declarações: o arquivo assembly precisa de três declarações:
+O GCC por padrão compila código C em Thumb-2, enquanto o assembly do driver é escrito em ARM (A32). Quando código Thumb chama uma função ARM, o processador precisa trocar de modo, isso é chamado de interworking. Para funcionar corretamente sem a flag -marm, o arquivo assembly precisa de três declarações:
 
 - `.syntax unified` — Ativa a sintaxe ARM unificada (UAL)
 - `.arm` — Declara que o código a seguir é ARM, não Thumb
@@ -170,7 +170,7 @@ O GCC por padrão compila código C em Thumb-2, enquanto o assembly do driver é
 
 A metodologia usada no projeto foi a do PBL (Problem Based Learning) com reuniões em sessões tutorial, onde a turma define meta e discute a solução do problema. Os roteiros disponibilizados pelos professores ajudaram no desenvolvimento do projeto, o LAB 0 foi importante para entender o funcionamento do terminal Linux com a placa DE1-SoC e o Lab 2 foi fundamental para compreendermos a integração FPGA-HPS, além de ter sido importante na utilização do coprocessador que foi disponibilizado por Maike. Durante as sessões tutoriais, tópicos cruciais foram debatidos, como a utilização das chamadas de sistema, o mapeamento da memória, polling ou interrupção, entre outros.
 
-O driver foi desenvolvido em Assembly ARMv7, foi desenvolvida uma API em C composta pelo arquivo principal main.c e pelo header driver.h para estruturar a integração entre as duas linguagens, que declara as funções exportadas pelo assembly e centraliza as constantes do hardware. Essa separação permitiu que o C controlasse o fluxo da aplicação enquanto o assembly ficou responsável por toda a comunicação com o coprocessador.
+O driver foi desenvolvido em Assembly ARMv7, junto a uma API em C composta pelo arquivo principal `main.c` e pelo header driver.h para estruturar a integração entre as duas linguagens, que declara as funções exportadas pelo assembly e centraliza as constantes do hardware. Essa separação permitiu que o C controlasse o fluxo da aplicação enquanto o assembly ficou responsável por toda a comunicação com o coprocessador.
 
 <div align="center">
 <h1>
